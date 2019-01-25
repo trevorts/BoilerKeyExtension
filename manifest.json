@@ -16,15 +16,14 @@
         "https://www.purdue.edu/apps/account/cas/*"
       ],
       "js": [
-        "jsOTP.min.js",
+        "jsOTP.js",
         "content.js"
       ]
     }
   ],
   "browser_action": {
     "default_icon": "icons/icon128.png",
-    "default_title": "BoilerKey Helper",
-    "default_popup": "popup.html"
+    "default_title": "BoilerKey Helper"
   },
   "permissions": [
     "https://api-1b9bef70.duosecurity.com/"

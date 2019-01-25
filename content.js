@@ -15,21 +15,6 @@ if (window.location.href.startsWith("https://mycourses.purdue.edu/") === true
 
 //Make sure we're on Purdue's CAS, otherwise, don't do anything.
 if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/login") === true) {
-    let url = new URL(window.location.href);
-    let reset = url.searchParams.get("reset");
-    if (reset === "true") {
-        alert("Reset time!");
-        localStorage.removeItem("pin");
-        localStorage.removeItem("code");
-        localStorage.removeItem("hotpSecret");
-        localStorage.removeItem("username");
-        localStorage.removeItem("counter");
-        window.close();
-    }
-}
-
-//Make sure we're on Purdue's CAS, otherwise, don't do anything.
-if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/login") === true) {
     //Retrieve everything from localStorage.
     let pin, code, hotpSecret, username;
     pin = get("pin");
@@ -51,7 +36,28 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
             //Otherwise, just show the user the password they should use in an alert.
         } else if (pin && !username) {
             //Otherwise, just fill the password in for the user.
+            username = prompt("Please enter your username");
+            document.getElementById("username").value = username;
             document.getElementById("password").value = pin + "," + hmacCode;
+            document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
+        } else if (!pin && !username) {
+            username = prompt("Please enter your username");
+            if (username) {
+                document.getElementById("username").value = username;
+            pin = prompt("Please enter BoilerKey PIN:");
+            if (pin) {
+                document.getElementById("password").value = pin + "," + hmacCode;
+            document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
+            }
+            }
+        } else if (username && !pin) {
+            document.getElementById("username").value = username;
+            pin = prompt("Please enter BoilerKey PIN:");
+            if (pin) {
+                document.getElementById("password").value = pin + "," + hmacCode;
+            document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
+            }
+            
         } else {
             //If we don't have activation data, remove the info currently stored, as it needs to be replaced.
             localStorage.removeItem("pin");
@@ -102,37 +108,40 @@ async function askForInfo() {
     if (hotpSecret) {
         set("hotpSecret", hotpSecret);
         set("counter", 0);
-        alert("Activation successful! Press OK to continue to setup auto-login.")
+        alert("Activation successful! Press OK to continue to setup auto-login.");
     } else {
         alert("Activation failed, please try again. A new BoilerKey will need to be created.");
         location.reload();
     }
 
-    username = prompt("For a fully automated login, please enter username (recommended):");
+    username = prompt("For a fully automated login, please enter username (for manual log in, leave blank):");
+
+    //Save username/PIN if they exist.
+    if (username) {
+        set("username", username);
+    }
 
     //Traps user until they either enter a valid pin/username, or no pin at all.
     while (!pin || !(pin.match(/(\d{4})/) && pin.length === 4)) {
         if (username) {
-            pin = prompt("To complete auto-login setup, please enter BoilerKey PIN (recommended):");
+            pin = prompt("To complete auto-login setup, please enter BoilerKey PIN (for manual log in, leave blank):");
         } else {
-            pin = prompt("To enable password auto-fill, please enter BoilerKey PIN (recommended):");
+            pin = prompt("To enable password auto-fill, please enter BoilerKey PIN (for manual log in, leave blank):");
         }
         if (pin.match(/(\d{4})/) && pin.length === 4) {
             if (username) {
                 alert("Auto-login has been set-up and enabled!");
             } else {
-                alert("PIN,code will be auto-filled on each login!")
+                alert("PIN,code will be auto-filled on each log in!");
             }
         } else if (!pin) {
-            alert("No PIN set. A login code will be provided when you open this site.");
+            alert("No PIN set. You will be prompted to enter your PIN when you open this site.");
+            break;
         } else {
             alert("Invalid PIN, please try again.");
         }
     }
-    //Save username/PIN if they exist.
-    if (username) {
-        set("username", username);
-    }
+
     if (pin) {
         set("pin", pin);
     }

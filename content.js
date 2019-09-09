@@ -22,7 +22,6 @@ password_prompt("Please enter your password:", "Submit", function(password) {
 */
 
 window.password_prompt = function(label_message, button_message, arg3, arg4, arg5) {
-    console.log("WAT");
     if (typeof label_message !== "string") var label_message = "Password:";
     if (typeof button_message !== "string") var button_message = "Submit";
     if (typeof arg3 === "function") {
@@ -99,7 +98,6 @@ if (window.location.href.startsWith("https://mycourses.purdue.edu/") === true
 
 //Make sure we're on Purdue's CAS, otherwise, don't do anything.
 if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/login") === true) {
-    console.log("Sigh");
     let url = new URL(window.location.href);
     let reset = url.searchParams.get("reset");
     if (reset === "true") {
@@ -115,7 +113,6 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
 
 //Make sure we're on Purdue's CAS, otherwise, don't do anything.
 if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/login") === true) {
-    console.log("BS");
     //Retrieve everything from localStorage.
     let pin, code, hotpSecret, username;
     pin = get("pin");
@@ -125,13 +122,9 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
 
     //If the browser has been activated, go through the login process.
     if (hotpSecret) {
-        console.log("Hm");
-        console.log(hotpSecret);
         hmacCode = generateHmacCode(hotpSecret);
-        console.log("Yah");
         //If we have the username/pin, log the user in automatically.
         if (username && pin) {
-            console.log("Nope");
             //Auto-fill username field
             document.getElementById("username").value = username;
             //Auto-fill password field
@@ -140,18 +133,18 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
             document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
             //Otherwise, just show the user the password they should use in an alert.
         } else if (pin && !username) {
-            console.log("Maybe");
             //Otherwise, just fill the password in for the user.
+            username = prompt("Please enter your username");
+            document.getElementById("username").value = username;
             document.getElementById("password").value = pin + "," + hmacCode;
+            document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
         } else if (username && !pin) {
-          console.log("Yep");
           password_prompt("Please enter your PIN:", "Submit", function(pin) {
             document.getElementById("password").value = (pin + "," + hmacCode);
             document.getElementById("username").value = username;
             document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
           });
         } else {
-            console.log("Wat");
             //If we don't have activation data, remove the info currently stored, as it needs to be replaced.
             localStorage.removeItem("pin");
             localStorage.removeItem("code");
@@ -162,7 +155,6 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
             askForInfo();
         }
     } else {
-        console.log("Hm2");
         //If we don't have activation data, remove the info currently stored, as it needs to be replaced.
         localStorage.removeItem("pin");
         localStorage.removeItem("code");
@@ -176,7 +168,6 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
 
 //Collecting user-info, and setting up the new BoilerKey.
 async function askForInfo() {
-    console.log("Here");
     let code, pin, username, hotpSecret;
     //Traps user until they enter a valid activation link, or code.
     while (!code) {
@@ -198,7 +189,6 @@ async function askForInfo() {
     hotpSecret = JSON.parse(hotpSecret);
     hotpSecret = hotpSecret.response["hotp_secret"];
 
-    console.log(hotpSecret);
     //If activation was successful, save the hotp-secret and reset the counter.
     if (hotpSecret) {
         set("hotpSecret", hotpSecret);
@@ -279,15 +269,11 @@ function makeRequest(method, url) {
 
 //Generating the HMAC code using the jsOTP library with our hotp-secret and counter.
 function generateHmacCode(hotpSecret) {
-    console.log("Here");
     //Get counter into an int
     let counter = parseInt(get("counter"));
     //Get hmacCode
-    console.log(counter);
     var hotp = new jsOTP.hotp();
-    console.log("Sigh2");
     var hmacCode = hotp.getOtp(hotpSecret, counter);
-    console.log("Sigh3");
     //Increment the counter
     set("counter", counter + 1);
     return hmacCode;

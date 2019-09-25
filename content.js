@@ -21,7 +21,7 @@ password_prompt("Please enter your password:", "Submit", function(password) {
 });
 */
 
-window.password_prompt = function(label_message, button_message, arg3, arg4, arg5) {
+window.password_prompt = function (label_message, button_message, arg3, arg4, arg5) {
     if (typeof label_message !== "string") var label_message = "Password:";
     if (typeof button_message !== "string") var button_message = "Submit";
     if (typeof arg3 === "function") {
@@ -32,16 +32,16 @@ window.password_prompt = function(label_message, button_message, arg3, arg4, arg
         var height = arg4;
         var callback = arg5;
     }
-    if (typeof width !== "number") var width = 200;
+    if (typeof width !== "number") var width = 250;
     if (typeof height !== "number") var height = 100;
-    if (typeof callback !== "function") var callback = function(password){};
+    if (typeof callback !== "function") var callback = function (password) { };
 
-    var submit = function() {
+    var submit = function () {
         callback(input.value);
         document.body.removeChild(div);
         window.removeEventListener("resize", resize, false);
     };
-    var resize = function() {
+    var resize = function () {
         div.style.left = ((window.innerWidth / 2) - (width / 2)) + "px";
         div.style.top = ((window.innerHeight / 2) - (height / 2)) + "px";
     };
@@ -69,8 +69,8 @@ window.password_prompt = function(label_message, button_message, arg3, arg4, arg
     var input = document.createElement("input");
     input.id = "password_prompt_input";
     input.type = "password";
-//    input.onblur = function() {document.getElementById("password_prompt_input").focus();};
-    input.addEventListener("keyup", function(e) {
+    //    input.onblur = function() {document.getElementById("password_prompt_input").focus();};
+    input.addEventListener("keyup", function (e) {
         if (e.keyCode == 13) submit();
     }, false);
     div.appendChild(input);
@@ -85,7 +85,7 @@ window.password_prompt = function(label_message, button_message, arg3, arg4, arg
 
     document.body.appendChild(div);
     window.addEventListener("resize", resize, false);
-    setTimeout(function() {document.getElementById("password_prompt_input").focus();}, 800);
+    setTimeout(function () { document.getElementById("password_prompt_input").focus(); }, 800);
 };
 
 //Click on the "Purdue Account Login" button
@@ -139,11 +139,11 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
             document.getElementById("password").value = pin + "," + hmacCode;
             document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
         } else if (username && !pin) {
-          password_prompt("Please enter your PIN:", "Submit", function(pin) {
-            document.getElementById("password").value = (pin + "," + hmacCode);
-            document.getElementById("username").value = username;
-            document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
-          });
+            password_prompt("Please enter your PIN:", "Submit", function (pin) {
+                document.getElementById("password").value = (pin + "," + hmacCode);
+                document.getElementById("username").value = username;
+                document.querySelectorAll("input[name='submit'][accesskey='s'][value='Login'][tabindex='3'][type='submit']")[0].click();
+            });
         } else {
             //If we don't have activation data, remove the info currently stored, as it needs to be replaced.
             localStorage.removeItem("pin");
@@ -168,7 +168,7 @@ if (window.location.href.startsWith("https://www.purdue.edu/apps/account/cas/log
 
 //Collecting user-info, and setting up the new BoilerKey.
 async function askForInfo() {
-    let code, pin, username, hotpSecret;
+    let code, pin, username;
     //Traps user until they enter a valid activation link, or code.
     while (!code) {
         let link = prompt("Setup steps:\n" +
@@ -181,54 +181,57 @@ async function askForInfo() {
         }
     }
 
-    hotpSecret = await makeRequest("POST", 'https://api-1b9bef70.duosecurity.com/push/v2/activation/' +
-        code + '?app_id=com.duosecurity.duomobile.app.DMApplication' +
-        '&app_version=2.3.3&app_build_number=323206&full_disk_encryption=false&manufacturer=Google&model=Pixel&' +
-        'platform=Android&jailbroken=false&version=6.0&language=EN&customer_protocol=1');
 
-    hotpSecret = JSON.parse(hotpSecret);
-    hotpSecret = hotpSecret.response["hotp_secret"];
 
-    //If activation was successful, save the hotp-secret and reset the counter.
-    if (hotpSecret) {
-        set("hotpSecret", hotpSecret);
-        set("counter", 0);
-        alert("Activation successful! Press OK to continue to setup auto-login.")
-    } else {
-        alert("Activation failed, please try again. A new BoilerKey will need to be created.");
-        location.reload();
-    }
+    chrome.runtime.sendMessage({
+        method: 'POST', url: 'https://api-1b9bef70.duosecurity.com/push/v2/activation/' +
+            code + '?app_id=com.duosecurity.duomobile.app.DMApplication' +
+            '&app_version=2.3.3&app_build_number=323206&full_disk_encryption=false&manufacturer=Google&model=Pixel&' +
+            'platform=Android&jailbroken=false&version=6.0&language=EN&customer_protocol=1'
+    },
+        function (hotpSecret) {
+            console.log(hotpSecret);
+            hotpSecret = JSON.parse(hotpSecret);
+            if (hotpSecret['stat'] !== 'FAIL') {
+                set("hotpSecret", hotpSecret.response["hotp_secret"]);
+                set("counter", 0);
+                alert("Activation successful! Press OK to continue to setup auto-login.")
+                username = prompt("For a fully automated login, please enter username (recommended):");
 
-    username = prompt("For a fully automated login, please enter username (recommended):");
-
-    //Traps user until they either enter a valid pin/username, or no pin at all.
-    while (!pin || !(pin.match(/(\d{4})/) && pin.length === 4)) {
-        if (username) {
-            pin = prompt("To complete auto-login setup, please enter BoilerKey PIN (recommended):");
-        } else {
-            pin = prompt("To enable password auto-fill, please enter BoilerKey PIN (recommended):");
-        }
-        if (pin.match(/(\d{4})/) && pin.length === 4) {
-            if (username) {
-                alert("Auto-login has been set-up and enabled!");
+                //Traps user until they either enter a valid pin/username, or no pin at all.
+                while (!pin || !(pin.match(/(\d{4})/) && pin.length === 4)) {
+                    if (username) {
+                        pin = prompt("To complete auto-login setup, please enter BoilerKey PIN (recommended):");
+                    } else {
+                        pin = prompt("To enable password auto-fill, please enter BoilerKey PIN (recommended):");
+                    }
+                    if (pin.match(/(\d{4})/) && pin.length === 4) {
+                        if (username) {
+                            alert("Auto-login has been set-up and enabled!");
+                        } else {
+                            alert("PIN,code will be auto-filled on each login!")
+                        }
+                    } else if (!pin) {
+                        alert("No PIN set. A login code will be provided when you open this site.");
+                        break;
+                    } else {
+                        alert("Invalid PIN, please try again.");
+                    }
+                }
+                //Save username/PIN if they exist.
+                if (username) {
+                    set("username", username);
+                }
+                if (pin) {
+                    set("pin", pin);
+                }
+                //Refresh the page to start auto-login.
+                location.reload();
             } else {
-                alert("PIN,code will be auto-filled on each login!")
+                alert("Activation failed, please try again. A new BoilerKey will need to be created.");
+                location.reload();
             }
-        } else if (!pin) {
-            alert("No PIN set. A login code will be provided when you open this site.");
-        } else {
-            alert("Invalid PIN, please try again.");
-        }
-    }
-    //Save username/PIN if they exist.
-    if (username) {
-        set("username", username);
-    }
-    if (pin) {
-        set("pin", pin);
-    }
-    //Refresh the page to start auto-login.
-    location.reload();
+        });
 }
 
 //Simply validate the link the user enters, and return the code found at the end of it.

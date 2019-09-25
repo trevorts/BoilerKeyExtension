@@ -186,7 +186,7 @@ async function askForInfo() {
     chrome.runtime.sendMessage({
         method: 'POST', url: 'https://api-1b9bef70.duosecurity.com/push/v2/activation/' +
             code + '?app_id=com.duosecurity.duomobile.app.DMApplication' +
-            '&app_version=2.3.3&app_build_number=323206&full_disk_encryption=false&manufacturer=Google&model=Pixel&' +
+            '&app_version=3.26.0&app_build_number=326002&full_disk_encryption=false&manufacturer=Google&model=Pixel&' +
             'platform=Android&jailbroken=false&version=6.0&language=EN&customer_protocol=1'
     },
         function (hotpSecret) {
